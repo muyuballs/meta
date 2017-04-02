@@ -49,6 +49,8 @@ func (this *MQTTHandler) process() {
 					break
 				}
 
+				this.client.Id = string(data.ClientId())
+
 				this.cm.AddClient(this.client)
 				this.client.IsAuthed = true
 
@@ -62,7 +64,7 @@ func (this *MQTTHandler) process() {
 					break
 				}
 				data := msg.(*packet.SubscribeMessage)
-				log.Println(data.String(), data.Qos())
+				// log.Println(data.String(), data.Qos())
 
 				for _, topic := range data.Topics() {
 					subscribed := false
@@ -88,7 +90,7 @@ func (this *MQTTHandler) process() {
 					break
 				}
 				data := msg.(*packet.UnsubscribeMessage)
-				log.Println(data.String())
+				// log.Println(data.String())
 
 				delTopics := make([]string, 0)
 				for _, topic := range data.Topics() {
@@ -146,7 +148,7 @@ func (this *MQTTHandler) process() {
 					this.client.Close()
 					break
 				}
-				this.client.Conn.SetDeadline(time.Now().Add(time.Second * 10))
+				this.client.Conn.SetDeadline(time.Now().Add(time.Second * 60))
 
 				ack := packet.NewPingrespMessage()
 				ack.SetPacketId(msg.PacketId())
@@ -157,6 +159,7 @@ func (this *MQTTHandler) process() {
 				break
 			default:
 				log.Println("unimplemented message type")
+				this.client.Close()
 				break
 			}
 		}
@@ -265,6 +268,7 @@ func (this *MQTTHandler) producer() {
 				}
 				for _, topic := range consumer.Topics {
 					if topic == string(data.Topic()) {
+						log.Println("producerId:", this.client.Id, "consumerId:", consumer.Id, "payload:", string(data.Payload()))
 						consumer.OutChan <- data
 					}
 				}
